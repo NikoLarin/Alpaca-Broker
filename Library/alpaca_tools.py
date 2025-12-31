@@ -173,4 +173,32 @@ def aoc(ticker):
 
     return today_aoc / 2
 
+def bollinger_bands(t):    
+    df = pd.DataFrame(get_ohlc('SPY','1Min'))
+    df = df.rename(columns={  # names columns
+                'o': 'Open',
+                'h': 'High',
+                'l': 'Low',
+                'c': 'Close',
+                't': 'Date'
+            }
+    )
+    df = dropna(df)
+    
+    indicator_bb = BollingerBands(close=df["Close"], window=t, window_dev=2)
+
+    # Add Bollinger Bands features
+    df['bb_bbm'] = indicator_bb.bollinger_mavg()
+    df['bb_bbh'] = indicator_bb.bollinger_hband()
+    df['bb_bbl'] = indicator_bb.bollinger_lband()
+
+    # Add Bollinger Band high indicator
+    df['bb_bbhi'] = indicator_bb.bollinger_hband_indicator()
+
+    # Add Bollinger Band low indicator
+    df['bb_bbli'] = indicator_bb.bollinger_lband_indicator()
+
+    return df['bb_bbh'].iloc[-2], df['bb_bbm'].iloc[-2], df['bb_bbl'].iloc[-2]
+
+
 
