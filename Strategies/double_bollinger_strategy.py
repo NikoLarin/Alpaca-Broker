@@ -15,7 +15,7 @@ trading = True
 while trading == True:
     for ticker in tickers:
         hour = time.localtime()
-        while (hour[3] >= 9 and hour[4] >= 30)  or hour[3] < 16:
+        while (hour[3] > 9 or (hour[3] == 9 and hour[4] >= 30)) and hour[3] < 16:
             
             t = [60, 15] # bollinger look backs
             bb = []
@@ -41,7 +41,7 @@ while trading == True:
     #----------------SHORT ORDER CONDITION----------------#
             if price > highband1 and price > highband2:
                 short = True
-                stop = price * 0.05 + price
+                stop = price * 1.05
                 response = requests.post(URL, json=stock_order_mkt_stop(ticker=ticker, side='sell', amt=amt, stop=stop), headers=headers()) # order submission
                 print('ORDER SENT')
                 while short == True:
@@ -50,13 +50,17 @@ while trading == True:
                     bb = []
                     for look_back in t:    
                         bb.append(bollinger_bands(look_back))
+                    
+                    (bb_h_60, bb_m_60, bb_l_60) = bb[0]
                     midband1 = bb_m_60
                     price = current_stock_price(ticker)
                     
                     if price == midband1:# take profit
+                        
                         response = requests.post(URL, json=stock_order_mkt(ticker, side='buy', amt=amt), headers=headers()) #take profit order submission
                         short = False
-                        
+                        midband1 = bb_m_60
+
                         print('FLATTEN ORDER SENT')
                         time.sleep(5)
                         flatten_orders()
@@ -65,7 +69,7 @@ while trading == True:
     #----------------LONG ORDER CONDITION----------------#
             elif price < lowband1 and price < lowband2: 
                 long = True
-                stop = price * 0.05 - price
+                stop = price * 0.95
                 response = requests.post(URL, json=stock_order_mkt_stop(ticker=ticker, side='buy',amt=amt, stop=stop), headers=headers()) # order submission
 
                 print('ORDER SENT')
@@ -75,6 +79,8 @@ while trading == True:
                     bb = []
                     for look_back in t:    
                         bb.append(bollinger_bands(look_back))
+                    (bb_h_60, bb_m_60, bb_l_60) = bb[0]
+                    
                     midband1 = bb_m_60
                     price = current_stock_price(ticker)
                     
