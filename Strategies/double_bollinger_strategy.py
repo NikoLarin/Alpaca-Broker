@@ -45,6 +45,14 @@ while trading == True:
                 response = requests.post(URL, json=stock_order_mkt_stop(ticker=ticker, side='sell', amt=amt, stop=stop), headers=headers()) # order submission
                 print('ORDER SENT')
                 while short == True:
+                    time.sleep(5)
+                    t = [60, 15] # bollinger look backs
+                    bb = []
+                    for look_back in t:    
+                        bb.append(bollinger_bands(look_back))
+                    midband1 = bb_m_60
+                    price = current_stock_price(ticker)
+                    
                     if price == midband1:# take profit
                         response = requests.post(URL, json=stock_order_mkt(ticker, side='buy', amt=amt), headers=headers()) #take profit order submission
                         short = False
@@ -62,7 +70,15 @@ while trading == True:
 
                 print('ORDER SENT')
                 while long == True:
-                    if price == midband1: # take profit
+                    time.sleep(5)
+                    t = [60, 15] # bollinger look backs
+                    bb = []
+                    for look_back in t:    
+                        bb.append(bollinger_bands(look_back))
+                    midband1 = bb_m_60
+                    price = current_stock_price(ticker)
+                    
+                    if price >= midband1: # take profit
                         response = requests.post(URL, json=stock_order_mkt(ticker=ticker, side='sell',amt=amt), headers=headers()) #take profit order submission
                         long = False
                         print('FLATTEN ORDER SENT')
