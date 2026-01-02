@@ -32,13 +32,13 @@ def position_history():
     pass
 
 #----------STOCK----------#
-def current_stock_price(sym):
+def open_stock_price(sym):
     url = f"https://data.alpaca.markets/v2/stocks/{sym}/snapshot"
 
     response = requests.get(url, headers=headers()) #calls headers function
     response = response.json()
 
-    return response['dailyBar']['c']
+    return response['dailyBar']['o']
 
 def open_stock_price(sym):
     url = f"https://data.alpaca.markets/v2/stocks/{sym}/snapshot"
@@ -89,11 +89,6 @@ def chart(ticker, tf):
     )
 
 def get_ohlc(ticker, tf):
-    '''
-    This function gets OHLC data for a year ago
-    IS ONLY RELIABLE FOR DAILY CANDLES AS OF NOW
-    '''
-    
     today = date.today()
     year_ago = today - relativedelta(years=1)
     
@@ -120,7 +115,6 @@ def get_ohlc(ticker, tf):
 #----------OPTIONS----------#
 def option(oCode): #needs symbol and option code
     url = f"https://data.alpaca.markets/v1beta1/options/snapshots?symbols={oCode}&feed=indicative&limit=1"
-
     
     response = requests.get(url, headers=headers()) # gets live option based on oCode
     response = response.json()
@@ -174,7 +168,7 @@ def aoc(ticker):
     return today_aoc / 2
 
 def bollinger_bands(t):    
-    df = pd.DataFrame(get_ohlc('SPY','1Min'))
+    df = pd.DataFrame(get_ohlc(ticker, tf))
     df = df.rename(columns={  # names columns
                 'o': 'Open',
                 'h': 'High',
