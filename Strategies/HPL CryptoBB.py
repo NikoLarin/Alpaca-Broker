@@ -11,6 +11,8 @@ dex = ccxt.hyperliquid({
     })
 
 
+
+
 symbol = 'SOL/USDC:USDC'
 
 dex.set_leverage(20, symbol)  # ← ADD THIS LINE (example: 10x)
@@ -48,7 +50,7 @@ trading = True
 while trading == True:
     symbol = 'SOL/USDC:USDC'
     ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
-    curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+    curprice = float(dex.fetch_ticker(symbol)["last"])
     t = [60, 15]
     data = []
     for i in t:
@@ -62,9 +64,9 @@ while trading == True:
     lsBand = data[0][2]
     lfBand = data[1][2]
 
-    curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+    curprice = float(dex.fetch_ticker(symbol)["last"])
     if curprice > hsBand and curprice > hfBand:
-        curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+        curprice = float(dex.fetch_ticker(symbol)["last"])
         symbol = "SOL/USDC:USDC"
         order_type = "limit"
         side = "sell"
@@ -76,34 +78,29 @@ while trading == True:
 
         while short == True:
             time.sleep(5)
-            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
-            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             t = [60, 15]
             data = []
             for i in t:
                 data.append(bollinger_bands(i))
 
-            hsBand = data[0][0]
-            hfBand = data[1][2]
-
             msBand = data[0][1]
-
-            lsBand = data[0][2]
-            lfBand = data[1][2]
+            print(msBand)
             if curprice <= msBand:
                 symbol = "SOL/USDC:USDC"
                 order_type = "market"
                 side = "buy"
                 amount = 0.1
-                price = dex.load_markets()[symbol]["info"]["midPx"]
+                price = float(dex.fetch_ticker(symbol)["last"])
 
                 dex.create_order(symbol, order_type, side, amount, price=price, params={"reduceOnly":True})
                 short = False
                 continue
 
     if curprice < lfBand and curprice < lsBand:
-        curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+        curprice = float(dex.fetch_ticker(symbol)["last"])
         symbol = "SOL/USDC:USDC"
         order_type = "limit"
         side = "buy"
@@ -115,26 +112,21 @@ while trading == True:
         while long == True:
             time.sleep(5)
             ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
-            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             t = [60, 15]
             data = []
             for i in t:
                 data.append(bollinger_bands(i))
-
-            hsBand = data[0][0]
-            hfBand = data[1][2]
-
+            
             msBand = data[0][1]
-
-            lsBand = data[0][2]
-            lfBand = data[1][2]
-            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            print(msBand)
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             if curprice >= msBand:
                 symbol = "SOL/USDC:USDC"
                 order_type = "market"
                 side = "sell"
                 amount = dex.fetch_positions([symbol])[0]["contracts"]
-                price = dex.load_markets()[symbol]["info"]["midPx"]
+                price = float(dex.fetch_ticker(symbol)["last"])
 
                 dex.create_order(symbol, order_type, side, amount, price=price, params={"reduceOnly":True})
                 long = False
@@ -144,4 +136,3 @@ while trading == True:
         time.sleep(10)
         print("Searching for trades")
         print(f'HighBand: {hsBand}\nPrice: {curprice}\nLowBand: {lsBand}')
-        continue
