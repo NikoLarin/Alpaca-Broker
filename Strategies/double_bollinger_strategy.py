@@ -1,3 +1,11 @@
+'''
+SUMMARY:
+A double bollinger bands strategy using alpaca. 
+
+FUTURE UPDATES:
+Only one ticker is supported at a time. 
+'''
+
 import pandas as pd
 import time
 from ta import add_all_ta_features
@@ -8,7 +16,7 @@ from alpaca_tools import get_ohlc, current_stock_price, headers, stock_order_mkt
 
 URL = f'{BASE_URL}/orders'
 
-tickers = ['SPY', 'QQQ']
+tickers = ['SPY']
 amt = int(input("Input the # of shares: "))
 trading = True
 
@@ -27,9 +35,9 @@ while trading == True:
 
             highband1 = bb_h_60
             highband2 = bb_h_15
-
+            
             midband1 = bb_m_60
-
+            
             lowband1 = bb_l_60
             lowband2 = bb_l_15
 
@@ -41,9 +49,9 @@ while trading == True:
     #----------------SHORT ORDER CONDITION----------------#
             if price > highband1 and price > highband2:
                 short = True
-                stop = price * 1.05
-                response = requests.post(URL, json=stock_order_mkt_stop(ticker=ticker, side='sell', amt=amt, stop=stop), headers=headers()) # order submission
-                print('ORDER SENT')
+
+                response = requests.post(URL, json=stock_order_mkt(ticker=ticker, side='sell', amt=amt,tif='day'), headers=headers()) # order submission
+                print('SHORT ORDER SENT')
                 while short == True:
                     time.sleep(5)
                     t = [60, 15] # bollinger look backs
@@ -55,24 +63,24 @@ while trading == True:
                     midband1 = bb_m_60
                     price = current_stock_price(ticker)
                     
+                    print(f'The current price is {price}\nYour take profit is {bb_m_60}')
                     if price == midband1:# take profit
                         
-                        response = requests.post(URL, json=stock_order_mkt(ticker, side='buy', amt=amt), headers=headers()) #take profit order submission
+                        response = requests.post(URL, json=stock_order_mkt(ticker, side='buy', amt=amt,tif='day'), headers=headers()) #take profit order submission
                         short = False
                         midband1 = bb_m_60
 
                         print('FLATTEN ORDER SENT')
                         time.sleep(5)
                         flatten_orders()
-                        
             
     #----------------LONG ORDER CONDITION----------------#
-            elif price < lowband1 and price < lowband2: 
+            elif price < lowband1 and price < lowband2:#lowband2: 
                 long = True
-                stop = price * 0.95
-                response = requests.post(URL, json=stock_order_mkt_stop(ticker=ticker, side='buy',amt=amt, stop=stop), headers=headers()) # order submission
 
-                print('ORDER SENT')
+                response = requests.post(URL, json=stock_order_mkt(ticker=ticker, side='buy',amt=amt, tif='day'), headers=headers()) # order submission
+
+                print('LONG ORDER SENT')
                 while long == True:
                     time.sleep(5)
                     t = [60, 15] # bollinger look backs
@@ -83,20 +91,14 @@ while trading == True:
                     
                     midband1 = bb_m_60
                     price = current_stock_price(ticker)
-                    
+                    print(f'The current price is {price}\nYour take profit is {bb_m_60}')
                     if price >= midband1: # take profit
-                        response = requests.post(URL, json=stock_order_mkt(ticker=ticker, side='sell',amt=amt), headers=headers()) #take profit order submission
+                        response = requests.post(URL, json=stock_order_mkt(ticker=ticker, side='sell',amt=amt, tif='day'), headers=headers()) #take profit order submission
                         long = False
                         print('FLATTEN ORDER SENT')
                         time.sleep(5)
                         flatten_orders()
-                        
-
 
     #----------------RESTART LOOP IF NO CONDITIONS MET----------------#        
-            else:
-                continue
-
-
     print('Restarting loop: Searching for trade :)')
     time.sleep(60)
