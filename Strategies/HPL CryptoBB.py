@@ -11,7 +11,6 @@ dex = ccxt.hyperliquid({
     })
 
 
-
 symbol = 'SOL/USDC:USDC'
 
 dex.set_leverage(20, symbol)  # ← ADD THIS LINE (example: 10x)
@@ -76,7 +75,22 @@ while trading == True:
         print("Short Trade Executed")
 
         while short == True:
+            time.sleep(5)
             curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
+            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            t = [60, 15]
+            data = []
+            for i in t:
+                data.append(bollinger_bands(i))
+
+            hsBand = data[0][0]
+            hfBand = data[1][2]
+
+            msBand = data[0][1]
+
+            lsBand = data[0][2]
+            lfBand = data[1][2]
             if curprice <= msBand:
                 symbol = "SOL/USDC:USDC"
                 order_type = "market"
@@ -99,6 +113,21 @@ while trading == True:
         order = dex.create_order(symbol, order_type, side, amount, price=price)
         print("Long Trade Executed")
         while long == True:
+            time.sleep(5)
+            ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
+            curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
+            t = [60, 15]
+            data = []
+            for i in t:
+                data.append(bollinger_bands(i))
+
+            hsBand = data[0][0]
+            hfBand = data[1][2]
+
+            msBand = data[0][1]
+
+            lsBand = data[0][2]
+            lfBand = data[1][2]
             curprice = float(dex.load_markets()[symbol]["info"]["midPx"])
             if curprice >= msBand:
                 symbol = "SOL/USDC:USDC"
