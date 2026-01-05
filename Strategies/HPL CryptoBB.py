@@ -17,6 +17,7 @@ dex = ccxt.hyperliquid({
     "walletAddress": "YOURwalletADDRESS :)",
     "privateKey": "YOURprivateKEY :)",
     })
+
 symbol = 'SOL/USDC:USDC'
 dex.set_leverage(20, symbol)  # ← ADD THIS LINE (example: 10x)
 
@@ -31,6 +32,7 @@ def bollinger_bands(t):
             }
     )
     df = dropna(df)
+
     indicator_bb = BollingerBands(close=df[3], window=t, window_dev=2)
 
     # Add Bollinger Bands features
@@ -44,7 +46,10 @@ def bollinger_bands(t):
     # Add Bollinger Band low indicator
     df['bb_bbli'] = indicator_bb.bollinger_lband_indicator()
 
-    return df['bb_bbh'].iloc[-2], df['bb_bbm'].iloc[-2], df['bb_bbl'].iloc[-2]
+    return df['bb_bbh'].iloc[-1
+], df['bb_bbm'].iloc[-1
+], df['bb_bbl'].iloc[-1
+]
 
 trading = True
 while trading == True:
@@ -66,45 +71,76 @@ while trading == True:
 
     curprice = float(dex.fetch_ticker(symbol)["last"])
     if curprice > hsBand and curprice > hfBand:
+        curprice = float(dex.fetch_ticker(symbol)["last"])
+        symbol = "SOL/USDC:USDC"
+        order_type = "limit"
+        side = "sell"
+        amount = 0.1
+        price = curprice
         short = True
-        order = dex.create_order("SOL/USDC:USDC", "limit", "sell", 0.1, float(dex.fetch_ticker(symbol)["last"]))
+        order = dex.create_order(symbol, order_type, side, amount, price=price + .03)
         print("Short Trade Executed")
 
         while short == True:
-            time.sleep(5)            
+            time.sleep(5)
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             t = [60, 15]
             data = []
             for i in t:
                 data.append(bollinger_bands(i))
 
             msBand = data[0][1]
-            print(f'Your take profit is: {msBand}')
+            print(msBand)
             if curprice <= msBand:
-                dex.create_order("SOL/USDC:USDC", "market", "buy", 0.1, , params={"reduceOnly":True})
+                symbol = "SOL/USDC:USDC"
+                order_type = "limit"
+                side = "buy"
+                amount = 0.1
+                price = msBand
+
+                ccxt.hyperliquid.cancel_all_orders_after(0)
+                dex.create_order(symbol, order_type, side, amount, price=price - .03, params={"reduceOnly":True})
                 short = False
                 continue
 
     if curprice < lfBand and curprice < lsBand:
+        curprice = float(dex.fetch_ticker(symbol)["last"])
+        symbol = "SOL/USDC:USDC"
+        order_type = "limit"
+        side = "buy"
+        amount = 0.1
+        price = curprice
         long = True
-        order = dex.create_order("SOL/USDC:USDC", "limit", "buy", 0.1, float(dex.fetch_ticker(symbol)["last"]))
+        order = dex.create_order(symbol, order_type, side, amount, price=price - .03)
         print("Long Trade Executed")
         while long == True:
             time.sleep(5)
             ohlc = dex.fetch_ohlcv('SOL/USDC:USDC', '1m', limit=500)
+            curprice = float(dex.fetch_ticker(symbol)["last"])
             t = [60, 15]
             data = []
             for i in t:
                 data.append(bollinger_bands(i))
             
             msBand = data[0][1]
-            print(f'Your take profit is: {msBand}')
+            print(msBand)
             curprice = float(dex.fetch_ticker(symbol)["last"])
             if curprice >= msBand:
-                dex.create_order("SOL/USDC:USDC", "market", "sell", 0.1, float(dex.fetch_ticker(symbol)["last"]), params={"reduceOnly":True})
+                symbol = "SOL/USDC:USDC"
+                order_type = "limit"
+                side = "sell"
+                amount = 0.1 # doesnt dynamically CLOSE BE CAREFUL
+                price = msBand
+
+                ccxt.hyperliquid.cancel_all_orders_after(0)
+                dex.create_order(symbol, order_type, side, amount, price=price + .03, params={"reduceOnly":True})
                 long = False
                 continue
+    
     else:
         print(f'HighBand: {hsBand}\nPrice: {curprice}\nLowBand: {lsBand}')
         time.sleep(10)
         print("Searching for trades")
+        
