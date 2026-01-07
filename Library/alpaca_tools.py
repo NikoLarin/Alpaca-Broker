@@ -22,7 +22,7 @@ def accountValue():
     
     return response['portfolio_value']
 
-def get_open_positions(): # return all open positions
+def open_positions(): # return all open positions
     response = requests.get(f'{BASE_URL}/positions', headers=headers()) # calls headers
     response = response.json()
     
@@ -40,32 +40,7 @@ def open_stock_price(sym):
 
     return response['dailyBar']['o']
 
-def open_stock_price(sym):
-    url = f"https://data.alpaca.markets/v2/stocks/{sym}/snapshot"
-
-    response = requests.get(url, headers=headers()) #calls headers function
-    response = response.json()
-
-    return response['dailyBar']['o']
-
-def pctDailyChange(sym):
-    url = f"https://data.alpaca.markets/v2/stocks/{sym}/snapshot"
-
-    response = requests.get(url, headers=headers()) #calls headers function
-    response = response.json()
     
-    openPrice = response['prevDailyBar']['c'] #Daily bar open 
-    closePrice = response['dailyBar']['c'] #latest price    
-    
-    pctChange = round(((closePrice - openPrice) / openPrice), 4) * 100
-
-    return pctChange
-    
-def is_market_open():
-    response = requests.get(f'{BASE_URL}/clock', headers=headers()) # calls headers
-    response = response.json()
-
-    return response['is_open'] #returns bool if mkt open/closed
 def chart(ticker, tf):
     df = pd.DataFrame(get_ohlc(ticker, tf)) # create the data frame
     df = df.rename(columns={  # names columns
@@ -93,7 +68,7 @@ def get_ohlc(ticker, tf):
     year_ago = today - relativedelta(years=1)
     
     url = f"https://data.alpaca.markets/v2/stocks/bars?&symbols={ticker}&timeframe={tf}&start={year_ago}&adjustment=raw&feed=sip&sort=asc"
-
+    # data is ascending starting from a year ago, to get most recent data switch the ending to desc
     response  = requests.get(url, headers=headers())
     data = response.json()
     
@@ -126,7 +101,7 @@ def option(oCode): #needs symbol and option code
     impliedVolatility = snap['impliedVolatility'] 
     price = snap['latestQuote']['ap']
 
-    return (greeks, impliedVolatility, price) # returnts a tuple
+    return (greeks, impliedVolatility, price) # returns a tuple
 
 def options_chain(ticker):
     #implement a simple filter to only get the most recent x strikes
