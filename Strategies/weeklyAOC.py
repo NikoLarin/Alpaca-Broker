@@ -1,10 +1,20 @@
+'''
+Calculates the weekly AOC then applies it to the tickers in the list [tickers]
+if we are exceeding either side of the aoc an atm credit spread is sold
+
+NEEDED UPDATES:
+Add more tickers to the tickers list at the end.
+
+'''
+
+
 import requests
 import time
 import calendar
 import datetime
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from alpaca_tools import headers, open_stock_price, current_stock_price, aoc, BASE_URL
+from alpaca_tools import headers, open_stock_price, current_stock_price, BASE_URL
 from dateutil.relativedelta import *
 
 TODAY = date.today()
@@ -21,13 +31,8 @@ for i in emptylist:
      emptystring += "{:02d}".format(i)
 
 def aoc(ticker):
-    '''
-    this function pulls open and close data for 100 days and calculates the 
-    average open to close change for one day   
-    '''
-
     
-    url = f"https://data.alpaca.markets/v2/stocks/bars?symbols={ticker}&timeframe=1W&start=2024-01-03&limit=8&adjustment=raw&feed=sip&sort=desc"
+    url = f"https://data.alpaca.markets/v2/stocks/bars?symbols={ticker}&timeframe=1W&start=2024-01-03&limit=8&adjustment=raw&feed=sip&sort=asc"
 
     response  = requests.get(url, headers=headers())
     data = response.json()
@@ -45,7 +50,7 @@ def aoc(ticker):
 
     today_aoc = sum(abs_pct_changes) / len(abs_pct_changes)
 
-    return today_aoc
+    return today_aoc / 2
 
 def aoc_strategy(ticker):
         
@@ -74,7 +79,7 @@ def aoc_strategy(ticker):
                             long_leg = f'{t}{emptystring[2:]}{otype}00{int(strike - 1)}000'
                         
                         else:
-                            print(f'Highbar:{highbar} Lowbar: {lowbar}')
+                            print(f'Highbar:{highbar} Lowbar: {lowbar} for {t}')
                             print("Waiting")
                             time.sleep(10)
                             continue
@@ -82,6 +87,7 @@ def aoc_strategy(ticker):
                         short_leg = f'{t}{emptystring[2:]}{otype}00{int(strike)}000'
                         
                         url = f'{BASE_URL}/orders'
+
 
                         payload = { #creates the debit spread
                             "type": "market",
@@ -106,12 +112,8 @@ def aoc_strategy(ticker):
                         print(response.text)
                         ticker.remove(t) #this will only take one trade per day for each ticker
                         break
-                    
+    
 
-
-ticker = ['SPY', 'QQQ', 'AMD', 'NVDA', 'WMT', 'RBLX', 'IBIT']
+ticker = ['SPY', 'QQQ', 'AMD', 'NVDA', 'WMT', 'RBLX', 'IBIT','GOOG','AMZN','AVGO','BABA', 'MU']
 
 print(aoc_strategy(ticker))
-
-
-
