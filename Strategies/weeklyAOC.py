@@ -6,8 +6,6 @@ NEEDED UPDATES:
 Add more tickers to the tickers list at the end.
 
 '''
-
-
 import requests
 import time
 import calendar
@@ -117,3 +115,4 @@ def aoc_strategy(ticker):
 ticker = ['SPY', 'QQQ', 'AMD', 'NVDA', 'WMT', 'RBLX', 'IBIT','GOOG','AMZN','AVGO','BABA', 'MU']
 
 print(aoc_strategy(ticker))
+
