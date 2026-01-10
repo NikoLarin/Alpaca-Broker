@@ -16,10 +16,11 @@ from dateutil.relativedelta import relativedelta
 from alpaca_tools import headers, open_stock_price, current_stock_price, aoc
 
 def aoc_strategy(ticker):
-            for t in ticker:
-                while True:    
-                    hour = time.localtime()
-                    while hour[3] > 9 or hour[3] < 16:
+            
+            while True:
+                hour = time.localtime()
+                while hour[3] > 9 or hour[3] < 16:
+                    for t in ticker:    
                         today_aoc = aoc(t)
                         stock_price = current_stock_price(t)
                         
@@ -34,7 +35,7 @@ def aoc_strategy(ticker):
                         if stock_price > highbar:
                             otype = 'C'
                             strike = round(stock_price, 0)
-                            long_leg = f'{ticker}{today[2:]}{otype}00{int(strike + 1)}000'
+                            long_leg = f'{t}{today[2:]}{otype}00{int(strike + 1)}000'
                         
                         elif stock_price < lowbar:
                             otype = 'P'
@@ -44,7 +45,7 @@ def aoc_strategy(ticker):
                         else:
                             print(f'Highbar:{highbar} Lowbar: {lowbar}')
                             print("Waiting")
-                            time.sleep(60)
+                            time.sleep(15)
                             continue
                         
                         short_leg = f'{t}{today[2:]}{otype}00{int(strike)}000'
@@ -73,6 +74,7 @@ def aoc_strategy(ticker):
                         response = requests.post(url, json=payload, headers=headers())
 
                         print(response.text)
+                        ticker.remove(t)
                         break
                     break
 
@@ -81,4 +83,3 @@ ticker = ['SPY', 'QQQ']
 for t in ticker:
     print(aoc(t))
 aoc_strategy(ticker)
-
