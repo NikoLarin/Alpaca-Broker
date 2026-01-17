@@ -37,7 +37,7 @@ def all_open_positions():
     data = response.json()
 
     
-    return list(data)
+    return [position['symbol'] for position in data]
 
 
 
@@ -85,75 +85,76 @@ TICKERS = [
  'AVGO','TSM','ADBE','CRM','ORCL','CSCO','QCOM','INTC','MU','IBM',
  'JPM','BAC','WFC','GS','MS','C','V','MA','PYPL','XOM',
  'UNH','LLY','JNJ','MRK','ABBV','BMY','GILD','TMO','CVS',
- 'WMT','HD','LOW','TGT','COST','MCD','SBUX','NKE','CMG','KO',
- 'PEP','PG','CL','MO','PM','KMB','HSY',
+ 'WMT','HD','LOW','TGT','COST','MCD','SBUX','NKE','CMG','KO','PEP','PG','CL','MO','PM','KMB','HSY',
  'CAT','DE','BA','GE','LMT','RTX','UPS','FDX','GM',
  'UBER','ABNB','SHOP','DIS','RIVN','F','LYFT','BABA','BIDU','TSLA','HOOD','MSTR',
  'PLTR','RBLX'
  ]
+while True:
+    all_positions = all_open_positions()
+    for ticker in TICKERS:
+        data = aoc(ticker)
+        price = current_stock_price(ticker)
+        weekly_open = data[1]
+        waoc = data[0]
 
-for ticker in TICKERS:
-    data = aoc(ticker)
-    price = current_stock_price(ticker)
-    weekly_open = data[1]
-    waoc = data[0]
+        highbar = weekly_open + (weekly_open * waoc)
+        lowbar = weekly_open - (weekly_open * waoc)
+        url = f'{BASE_URL}/orders'
 
-    highbar = weekly_open + (weekly_open * waoc)
-    lowbar = weekly_open - (weekly_open * waoc)
-    url = f'{BASE_URL}/orders'
-
-    #----------for call spread----------#
-    if price > highbar:
+        #----------for call spread----------#
         ocodes = list(call_spread(ticker,price,dte[:-1])['snapshots'].keys())
-        payload = { #creates the debit spread
+        
+        if price > highbar and ocodes[0] not in all_positions:
+                
+            payload = { #creates the debit spread
+                    "type": "market",
+                    "time_in_force": "day",
+                    "legs": [
+                        {
+                            "side": "buy",
+                            "symbol": ocodes[1],
+                            "ratio_qty": "1"
+                        },
+                        {
+                            "side": "sell",
+                            "symbol": ocodes[0],
+                            "ratio_qty": "1"
+                        }
+                    ],
+                    "order_class": "mleg",
+                    "qty": "1"
+                }
+            response = requests.post(url, json=payload, headers=headers())
+            TICKERS.remove(ticker)
+            print(f'Order sent for {ticker}')
+        #----------for put spread----------#
+        elif price < lowbar and ocodes[-1] not in all_positions:
+            ocodes = sorted(list(put_spread(ticker,price,dte[:-1])['snapshots'].keys()))
+            payload = { #creates the debit spread
                 "type": "market",
                 "time_in_force": "day",
                 "legs": [
                     {
                         "side": "buy",
-                        "symbol": ocodes[1],
+                        "symbol": ocodes[-2],
                         "ratio_qty": "1"
                     },
                     {
                         "side": "sell",
-                        "symbol": ocodes[0],
+                        "symbol": ocodes[-1],
                         "ratio_qty": "1"
                     }
                 ],
                 "order_class": "mleg",
                 "qty": "1"
             }
-        response = requests.post(url, json=payload, headers=headers())
-        TICKERS.remove(ticker)
-        print(f'Order sent for {ticker}')
-    #----------for put spread----------#
-    elif price < lowbar:
-        ocodes = sorted(list(put_spread(ticker,price,dte[:-1])['snapshots'].keys()))
-        payload = { #creates the debit spread
-            "type": "market",
-            "time_in_force": "day",
-            "legs": [
-                {
-                    "side": "buy",
-                    "symbol": ocodes[-2],
-                    "ratio_qty": "1"
-                },
-                {
-                    "side": "sell",
-                    "symbol": ocodes[-1],
-                    "ratio_qty": "1"
-                }
-            ],
-            "order_class": "mleg",
-            "qty": "1"
-        }
-        response = requests.post(url, json=payload, headers=headers())
-        TICKERS.remove(ticker)
-        print(f'Order sent for {ticker}')
-    else:
-        print(f'Highbar:{highbar}, Lowbar: {lowbar}, Ticker: {ticker}')
-        continue
-time.sleep(30)
-
+            response = requests.post(url, json=payload, headers=headers())
+            TICKERS.remove(ticker)
+            print(f'Order sent for {ticker}')
+        else:
+            print(f'Highbar:{highbar}, Lowbar: {lowbar}, Ticker: {ticker}')
+            continue
+    time.sleep(30)
 
 
